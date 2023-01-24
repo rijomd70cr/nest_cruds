@@ -1,5 +1,6 @@
 # compiled output
 /dist
+/images
 /node_modules
 src/common/envs
 # Logs

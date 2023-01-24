@@ -11,13 +11,19 @@ import {
   Request,
   ParseIntPipe,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  UploadedFiles,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 
 import { PublishService } from './publish.service';
 import { createPublishDTO } from './publish.dto';
 
 import { JwtAuthGuard } from '../auth/jwt-verify/jwt-auth.guard';
+import { Helper } from '../common/helpers/env.helper';
 
 @Controller('publish')
 export class PublishController {
@@ -96,4 +102,49 @@ export class PublishController {
       return response.status(HttpStatus.BAD_REQUEST).json({ error });
     }
   }
+
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: Helper.destinationPath,
+        filename: Helper.customFileName,
+      }),
+    }),
+  )
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Res() response: any,
+  ) {
+    try {
+      let extension = file.mimetype.split('/', 1).pop();
+      const data = {
+        path: file.path,
+        filename: file.filename,
+        extension: extension,
+      };
+      return response.status(HttpStatus.CREATED).json({
+        message: this.config.get('FILE_UPLOAD'),
+        result: data,
+        status: HttpStatus.CREATED,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      return response.status(HttpStatus.BAD_REQUEST).json({ error });
+    }
+  }
+
+  @Get()
+  display(@Res() res, @Query('files') files: string) {
+    res.sendFile(files, {
+      root: './images',
+    });
+  }
+
+  // @Get()
+  // display(@Res() res, @Query('files') files: string) {
+  //   res.sendFile(files, {
+  //     root: './images',
+  //   });
+  // }
 }

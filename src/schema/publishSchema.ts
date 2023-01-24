@@ -12,14 +12,17 @@ export class Publish {
   @Prop()
   register_no: String;
 
-  @Prop({ default: Date.now })
+  @Prop()
   created_at: Date;
 
-  @Prop({ default: Date.now })
+  @Prop()
   updated_at: Date;
 
   @Prop()
   version_no: String;
+
+  @Prop()
+  notes: String;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'UserDecorator' })
   created_by: UserDecerotor;

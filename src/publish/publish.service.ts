@@ -38,6 +38,8 @@ export class PublishService {
       let query: any = {
         ...publishData,
         created_by: loginedUser._id,
+        created_at: Date.now(),
+        updated_at: Date.now(),
       };
       const publish = new this.publishModal(query);
       await publish.save();
@@ -73,6 +75,7 @@ export class PublishService {
     }
   }
   async updatePublish(query: any): Promise<any> {
+    query.updated_at = Date.now();
     try {
       let data = await this.publishModal.findByIdAndUpdate(query?._id, query);
       return data;
@@ -84,23 +87,34 @@ export class PublishService {
   async updatePublishDoccuments(query: any): Promise<any> {
     try {
       let data = await this.publishModal.findById(query?.id);
-      this.logger.log(data);
       delete query.id;
-      query.dId = 'id' + new Date().getTime();
 
-      let doccumentArray: {
-        dId: String;
-        doccumenttitle: string;
-        file: string;
-        description: string;
-      }[] = [];
+      // for add
+      if (!query.dId) {
+        query.dId = 'id' + new Date().getTime();
+        let doccumentArray: {
+          dId: String;
+          doccumenttitle: string;
+          file: string;
+          description: string;
+        }[] = [];
 
-      if (data.doccuments?.length > 0) {
-        data.doccuments.push(query);
-        data.doccuments = data.doccuments;
-      } else {
-        doccumentArray.push(query);
-        data.doccuments = doccumentArray;
+        if (data.doccuments?.length > 0) {
+          data.doccuments.push(query);
+          data.doccuments = data.doccuments;
+        } else {
+          doccumentArray.push(query);
+          data.doccuments = doccumentArray;
+        }
+      }
+      // for delete
+      if (query.delete) {
+        let doccumentArray = data.doccuments;
+        data.doccuments = doccumentArray.filter((x) => x.dId !== query.dId);
+      }
+      // add notes editor
+      if (query.isAddNotes) {
+        data.notes = query.notes;
       }
 
       let updataedData = await this.updatePublish(data);
@@ -108,7 +122,6 @@ export class PublishService {
       if (updataedData) {
         return await this.getPublishList(newquery);
       }
-      this.logger.log(doccumentArray);
     } catch (error) {
       this.logger.error(error);
       throw new Error(error);
